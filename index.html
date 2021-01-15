@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+    <meta charset="utf-8">
+
+    <script>
+        if (document.all) alert('你的浏览器太旧了，恕不奉陪');
+    </script>
+
+    <!-- CSS only -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.0/dist/css/bootstrap.min.css"
+        crossorigin="anonymous">
+
+    <!-- JS, Popper.js, and jQuery -->
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.0/dist/js/bootstrap.min.js"
+        crossorigin="anonymous"></script>
+
+    <!-- 开发环境版本，包含了有帮助的命令行警告 -->
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+
+    <!-- font awesome -->
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.1/css/all.css"
+        integrity="sha384-vp86vTRFVJgpjF9jiIGPEEqYqlDwgyBgEF109VFjmqGmIY/Y4HV4d3Gp2irVfcrp" crossorigin="anonymous">
+
+</head>
+
+<body>
+
+    <div id="device_iden">
+        <template v-if="!(status)">
+            <div class="modal fade" id="device_iden_modal" data-backdrop="static" data-keyboard="false" tabindex="-1"
+                role="dialog" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="staticBackdropLabel">连接你的设备</h5>
+                        </div>
+                        <div class="modal-body">
+                            <div class="form-group">
+                                <label>Device ID:</label>
+                                <input v-model="device_id" class="form-control" type="text"
+                                    placeholder="input device id...">
+                            </div>
+                            <div class="form-group">
+                                <label>Device PIN:</label>
+                                <input v-model="device_pin" class="form-control" type="text"
+                                    placeholder="input device pin...">
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" v-on:click="reset_device_info" class="btn btn-primary"
+                                data-dismiss="modal">Confirm</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {{show_modal()}}
+        </template>
+
+    </div>
+
+    <header id="vue_header" class="container">
+
+        <nav class="navbar navbar-expand-lg navbar-light bg-light">
+            <span class="navbar-brand mb-0 h1">R-D</span>
+            
+            <div class="collapse navbar-collapse justify-content-start">
+              <ul class="navbar-nav">
+                <li class="nav-item">
+                  <a class="nav-link" href="#">Home</a>
+                </li>
+              </ul>
+            </div>
+
+            <div class="collapse navbar-collapse justify-content-end">
+                <ul class="navbar-nav">
+                  <li class="nav-item">
+                    <a class="nav-link" href="#settings"><i class="fas fa-cog"></i></a>
+                  </li>
+                </ul>
+              </div>
+          </nav>
+
+    </header>
+
+    <main id="vue_main">
+        
+        <template v-if="page==''"></template>
+        <template v-if="page=='settings'"></template>
+    </main>
+
+    <script>
+
+        function cert_device(device_id, device_pin) {
+            return $.getJSON('/api/cert_device', {
+                id: device_id,
+                pin: device_pin
+            }).then(
+                data => {
+                    _global.device_iden = data[1];
+                    Vue.set(_global.vue.device_iden, 'status', true);
+                    return true;
+                }, reason => {
+                    Vue.set(_global.vue.device_iden, 'status', false);
+                    return false;
+                }
+            );
+        }
+
+        function hash_change(){
+            let hash_url = window.location.hash;
+            Vue.set(_global.vue.vue_main,'page',hash_url)
+        }
+
+        _global = {};
+
+        _global.vue = {};
+
+        _global.vue.device_iden = new Vue({
+            el: "#device_iden",
+            data: {
+                status: true,
+                device_id: null,
+                device_pin: null
+            },
+            methods: {
+                reset_device_info() {
+                    localStorage.device_id = this.device_id;
+                    localStorage.device_pin = this.device_pin;
+                    this.status = true;
+                    cert_device(localStorage.device_id, localStorage.device_pin);
+                    return;
+                },
+                show_modal() {
+                    Vue.nextTick(() => {
+                        $('#device_iden_modal').modal('show');
+                    });
+                    return;
+                }
+            }
+        });
+
+        cert_device(localStorage.device_id, localStorage.device_pin);
+
+        _global.vue.vue_header = new Vue({
+            el: "#vue_header",
+            data: {
+            },
+            methods: {
+            }
+        });
+
+        _global.vue.vue_main=new Vue({
+            el:"#vue_main",
+            data:{
+                page:""
+            },
+            methods:{
+
+            }
+        });
+
+        window.onhashchange=hash_change;
+
+    </script>
+</body>
+
+</html>
